@@ -4,6 +4,8 @@ import { api } from './api/client'
 import { AppShell, type NavigationItem } from './components/layout/AppShell'
 import { DashboardPage } from './pages/DashboardPage'
 import { DataUploadPage } from './pages/DataUploadPage'
+import { ForecastPage } from './pages/ForecastPage'
+import { InsightsPage } from './pages/InsightsPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import type { DemoUser, HealthStatus } from './types/api'
 
@@ -87,7 +89,11 @@ export default function App() {
           ? <DashboardPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
           : activeItem === 'Data upload'
             ? <DataUploadPage onDatasetProcessed={(dataset) => selectDataset(dataset.id)} />
-            : <PlaceholderPage section={activeItem} />}
+            : activeItem === 'Forecast'
+              ? <ForecastPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
+              : activeItem === 'Insights'
+                ? <InsightsPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
+              : <PlaceholderPage section={activeItem} />}
       </div>
     </AppShell>
   )

@@ -4,7 +4,7 @@ Phase 2 adds `data_service.py`; future phases add deterministic business logic h
 
 - `data_service.py` — Phase 2 ingestion and processing.
 - `analytics_service.py` — Phase 3 metrics and chronological aggregation.
-- `forecast_service.py` — Phase 4 forecasting and evaluation.
+- `forecast_service.py` — Phase 4 Linear Regression forecasting and chronological evaluation.
 - `driver_analysis_service.py` and `alert_service.py` — Phase 5 insight detection.
 - `recommendation_service.py` — Phase 6 rule-based recommendations.
 - `scenario_service.py` — Phase 7 what-if calculations.

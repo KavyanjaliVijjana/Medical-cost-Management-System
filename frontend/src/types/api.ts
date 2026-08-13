@@ -95,3 +95,80 @@ export type AnalyticsSummary = {
   departments: DepartmentAnalytics[]
   highest_cost_department: DepartmentAnalytics | null
 }
+
+export type HistoricalCostPoint = {
+  month: string
+  total_cost: number
+}
+
+export type ForecastPoint = {
+  forecast_month: string
+  predicted_cost: number
+}
+
+export type ForecastModelMetrics = {
+  model_name: string
+  mae: number | null
+  rmse: number | null
+  r_squared: number | null
+}
+
+export type ForecastModelComparison = {
+  linear_regression: ForecastModelMetrics
+  naive_last_observed: ForecastModelMetrics
+  better_model: string
+}
+
+export type ForecastRun = {
+  id: number
+  dataset_id: number
+  horizon_months: number
+  model_name: string
+  mae: number | null
+  rmse: number | null
+  r_squared: number | null
+  created_at: string
+  expected_change_pct: number | null
+  model_comparison: ForecastModelComparison
+  historical_monthly_cost: HistoricalCostPoint[]
+  forecast_points: ForecastPoint[]
+  dataset: Dataset
+}
+
+export type DriverInsight = {
+  id: number
+  dataset_id: number
+  metric: string
+  observed_value: number
+  baseline_value: number | null
+  change_pct: number | null
+  period: string
+  explanation: string
+  created_at: string
+}
+
+export type CostAlert = {
+  id: number
+  dataset_id: number
+  severity: 'medium' | 'high'
+  metric: string
+  observed_value: number
+  threshold_value: number
+  period: string
+  explanation: string
+  status: 'active'
+  created_at: string
+}
+
+export type Recommendation = {
+  id: number
+  dataset_id: number
+  title: string
+  category: string
+  priority: 'medium' | 'high'
+  rationale: string
+  supporting_evidence: string[]
+  triggering_metric: string
+  period: string
+  created_at: string
+}

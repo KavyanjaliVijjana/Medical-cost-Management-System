@@ -24,3 +24,9 @@ class Dataset(Base):
     cost_records: Mapped[list["CostRecord"]] = relationship(
         back_populates="dataset", cascade="all, delete-orphan"
     )
+    forecast_runs: Mapped[list["ForecastRun"]] = relationship(
+        back_populates="dataset", cascade="all, delete-orphan"
+    )
+    driver_insights: Mapped[list["DriverInsight"]] = relationship(back_populates="dataset", cascade="all, delete-orphan")
+    alerts: Mapped[list["Alert"]] = relationship(back_populates="dataset", cascade="all, delete-orphan")
+    recommendations: Mapped[list["Recommendation"]] = relationship(back_populates="dataset", cascade="all, delete-orphan")

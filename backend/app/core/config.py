@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     app_env: str = "development"
     database_url: str = "sqlite:///./medical_cost.db"
     cors_origins: str = "http://localhost:5173"
+    alert_mom_cost_threshold_pct: float = 5.0
+    alert_cost_per_patient_threshold_pct: float = 5.0
+    alert_department_concentration_threshold_pct: float = 30.0
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
 
