@@ -1,6 +1,6 @@
 import type { NavigationItem } from '../components/layout/AppShell'
 
-type PlaceholderPageProps = { section: Exclude<NavigationItem, 'Dashboard' | 'Executive report' | 'Data upload' | 'Forecast' | 'Insights' | 'Scenario'> }
+type PlaceholderPageProps = { section: Exclude<NavigationItem, 'Dashboard' | 'Executive report' | 'Data upload' | 'Analytics' | 'Forecast' | 'Insights' | 'Scenario' | 'Advisor'> }
 
 const descriptions: Record<PlaceholderPageProps['section'], string> = {
   Analytics: 'Historical analytics are available on the dashboard. This dedicated workspace remains planned for a later phase.',

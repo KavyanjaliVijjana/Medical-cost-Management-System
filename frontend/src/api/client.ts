@@ -1,4 +1,4 @@
-import type { AnalyticsSummary, CostAlert, Dataset, DatasetPreviewResponse, DatasetValidationResponse, DemoUser, DriverInsight, ForecastRun, HealthStatus, Recommendation, ScenarioResult } from '../types/api'
+import type { AdvisorResponse, AnalyticsSummary, CostAlert, Dataset, DatasetPreviewResponse, DatasetValidationResponse, DemoUser, DriverInsight, ForecastRun, HealthStatus, Recommendation, ScenarioResult } from '../types/api'
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1'
 
@@ -51,4 +51,5 @@ export const api = {
   }),
   getScenario: (scenarioId: number) => request<ScenarioResult>(`/scenarios/${scenarioId}`),
   getLatestScenario: (datasetId: number) => request<ScenarioResult>(`/scenarios/datasets/${datasetId}/latest`),
+  askAdvisor: (datasetId: number, question: string) => request<AdvisorResponse>('/advisor/ask', { method: 'POST', body: JSON.stringify({ dataset_id: datasetId, question }) }),
 }

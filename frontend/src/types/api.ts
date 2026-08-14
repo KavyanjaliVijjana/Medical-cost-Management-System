@@ -187,3 +187,21 @@ export type ScenarioResult = {
   created_at: string
   disclaimer: string
 }
+
+export type AdvisorToolEvidence = {
+  tool: string
+  result: Record<string, unknown> | null
+  error: string | null
+}
+
+export type AdvisorResponse = {
+  dataset_id: number
+  question: string
+  status: 'completed' | 'provider_unavailable' | 'provider_error' | 'unsupported_question'
+  answer: string | null
+  message: string | null
+  tools_used: string[]
+  evidence: AdvisorToolEvidence[]
+  provider: string
+  model: string | null
+}

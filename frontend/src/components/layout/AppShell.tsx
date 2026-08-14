@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { HealthStatus } from '../../types/api'
 
-export type NavigationItem = 'Dashboard' | 'Executive report' | 'Data upload' | 'Analytics' | 'Forecast' | 'Insights' | 'Scenario'
+export type NavigationItem = 'Dashboard' | 'Executive report' | 'Data upload' | 'Analytics' | 'Forecast' | 'Insights' | 'Scenario' | 'Advisor'
 
 type AppShellProps = {
   activeItem: NavigationItem
@@ -20,6 +20,7 @@ const navigation: Array<{ label: NavigationItem; icon: string }> = [
   { label: 'Insights', icon: '◉' },
   { label: 'Scenario', icon: 'S' },
   { label: 'Executive report', icon: 'R' },
+  { label: 'Advisor', icon: 'A' },
 ]
 
 export function AppShell({ activeItem, onNavigate, health, healthError, userName, children }: AppShellProps) {
