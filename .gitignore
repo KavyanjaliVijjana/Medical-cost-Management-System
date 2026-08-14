@@ -4,6 +4,8 @@ __pycache__/
 .venv/
 backend/.env
 backend/medical_cost.db
+.env
+secrets
 
 # Node / Vite
 frontend/node_modules/

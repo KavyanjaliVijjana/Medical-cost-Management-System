@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Area, AreaChart, Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 import { api } from '../api/client'
-import type { AnalyticsSummary, Dataset } from '../types/api'
+import type { AnalyticsSummary, CostAlert, Dataset, DriverInsight, ForecastRun, Recommendation, ScenarioResult } from '../types/api'
 
 type DashboardPageProps = {
   selectedDatasetId: number | null
@@ -38,9 +38,23 @@ function MetricCard({ label, value, supportingText }: { label: string; value: st
   )
 }
 
+type BusinessStory = {
+  forecast: ForecastRun | null
+  driver: DriverInsight | null
+  alert: CostAlert | null
+  recommendation: Recommendation | null
+  scenario: ScenarioResult | null
+}
+
+function StoryStep({ label, value, detail, tone = 'slate' }: { label: string; value: string; detail: string; tone?: 'slate' | 'teal' | 'amber' }) {
+  const styles = tone === 'amber' ? 'border-amber-200 bg-amber-50' : tone === 'teal' ? 'border-cyan-200 bg-cyan-50' : 'border-slate-200 bg-slate-50'
+  return <div className={`rounded-lg border p-4 ${styles}`}><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-2 text-sm font-semibold text-slate-900">{value}</p><p className="mt-1 text-xs leading-5 text-slate-600">{detail}</p></div>
+}
+
 export function DashboardPage({ selectedDatasetId, onDatasetChange }: DashboardPageProps) {
   const [datasets, setDatasets] = useState<Dataset[]>([])
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
+  const [story, setStory] = useState<BusinessStory | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -77,6 +91,21 @@ export function DashboardPage({ selectedDatasetId, onDatasetChange }: DashboardP
         if (active) setError(loadError instanceof Error ? loadError.message : 'Could not load analytics.')
       })
       .finally(() => { if (active) setIsLoading(false) })
+    return () => { active = false }
+  }, [selectedDatasetId])
+
+  useEffect(() => {
+    if (selectedDatasetId === null) { setStory(null); return }
+    let active = true
+    Promise.all([
+      api.getLatestForecast(selectedDatasetId).catch(() => null),
+      api.getDrivers(selectedDatasetId),
+      api.getAlerts(selectedDatasetId),
+      api.getRecommendations(selectedDatasetId),
+      api.getLatestScenario(selectedDatasetId).catch(() => null),
+    ]).then(([forecast, drivers, alerts, recommendations, scenario]) => {
+      if (active) setStory({ forecast, driver: drivers.find((item) => item.metric === 'Department cost contribution') ?? drivers[0] ?? null, alert: alerts[0] ?? null, recommendation: recommendations[0] ?? null, scenario })
+    }).catch(() => { if (active) setStory(null) })
     return () => { active = false }
   }, [selectedDatasetId])
 
@@ -120,6 +149,18 @@ export function DashboardPage({ selectedDatasetId, onDatasetChange }: DashboardP
             <MetricCard label="Cost per patient" value={currency(summary.metrics.cost_per_patient)} supportingText="Across all processed records" />
             <MetricCard label="Latest monthly cost" value={currency(summary.metrics.latest_month_cost)} supportingText={summary.metrics.latest_month ? `${monthLabel(summary.metrics.latest_month)} · ${percentage(summary.metrics.month_over_month_cost_change_pct)} vs prior month` : 'No monthly records'} />
           </div>
+
+          <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-base font-semibold text-slate-900">Cost-containment story</h3><p className="mt-1 text-sm text-slate-600">Historical evidence flows through the latest persisted forecast, insights, recommendation, and optional scenario.</p></div><span className="rounded-full bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-teal">Selected dataset evidence</span></div>
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+              <StoryStep label="Historical cost" value={currency(summary.metrics.total_medical_cost)} detail={`${summary.monthly_trend.length} monthly observations`} tone="teal" />
+              <StoryStep label="Forecast" value={story?.forecast ? currency(story.forecast.forecast_points.reduce((total, point) => total + point.predicted_cost, 0)) : 'Not generated'} detail={story?.forecast ? `${story.forecast.horizon_months}-month projected total` : 'Generate a forecast to continue'} />
+              <StoryStep label="Top driver" value={story?.driver?.metric ?? 'Not generated'} detail={story?.driver?.explanation ?? 'Generate insights to continue'} />
+              <StoryStep label="Active alert" value={story?.alert ? `${story.alert.severity.toUpperCase()}: ${story.alert.metric}` : 'No active alert'} detail={story?.alert?.explanation ?? 'No alert evidence is available'} tone={story?.alert ? 'amber' : 'slate'} />
+              <StoryStep label="Recommendation" value={story?.recommendation?.title ?? 'Not generated'} detail={story?.recommendation?.rationale ?? 'Generate recommendations when evidence exists'} tone="teal" />
+              <StoryStep label="Scenario" value={story?.scenario ? currency(story.scenario.scenario_projected_cost) : 'Not calculated'} detail={story?.scenario ? `${story.scenario.department}: hypothetical estimate only` : 'Run a department reduction scenario'} tone="teal" />
+            </div>
+          </article>
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(20rem,1fr)]">
             <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">

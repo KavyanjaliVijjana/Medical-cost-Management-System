@@ -41,3 +41,12 @@ class ForecastRepository:
             .options(selectinload(ForecastRun.points))
         )
         return db.scalar(statement)
+
+    def get_latest_for_dataset(self, db: Session, dataset_id: int) -> ForecastRun | None:
+        statement = (
+            select(ForecastRun)
+            .where(ForecastRun.dataset_id == dataset_id)
+            .order_by(ForecastRun.created_at.desc(), ForecastRun.id.desc())
+            .options(selectinload(ForecastRun.points))
+        )
+        return db.scalar(statement)

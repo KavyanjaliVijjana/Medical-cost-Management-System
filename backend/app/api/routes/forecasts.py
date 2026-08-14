@@ -13,6 +13,11 @@ def create_forecast(payload: ForecastRequest, db: Session = Depends(get_db)) -> 
     return forecast_service.create_forecast(db, payload.dataset_id, payload.horizon_months)
 
 
+@router.get("/datasets/{dataset_id}/latest", response_model=ForecastRunResponse)
+def get_latest_forecast(dataset_id: int, db: Session = Depends(get_db)) -> ForecastRunResponse:
+    return forecast_service.get_latest_forecast(db, dataset_id)
+
+
 @router.get("/{forecast_run_id}", response_model=ForecastRunResponse)
 def get_forecast(forecast_run_id: int, db: Session = Depends(get_db)) -> ForecastRunResponse:
     return forecast_service.get_forecast(db, forecast_run_id)

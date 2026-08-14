@@ -6,6 +6,8 @@ import { DashboardPage } from './pages/DashboardPage'
 import { DataUploadPage } from './pages/DataUploadPage'
 import { ForecastPage } from './pages/ForecastPage'
 import { InsightsPage } from './pages/InsightsPage'
+import { ExecutiveReportPage } from './pages/ExecutiveReportPage'
+import { ScenarioPage } from './pages/ScenarioPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import type { DemoUser, HealthStatus } from './types/api'
 
@@ -87,13 +89,17 @@ export default function App() {
       <div className="mx-auto max-w-7xl px-8 py-10">
         {activeItem === 'Dashboard'
           ? <DashboardPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
+          : activeItem === 'Executive report'
+            ? <ExecutiveReportPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
           : activeItem === 'Data upload'
             ? <DataUploadPage onDatasetProcessed={(dataset) => selectDataset(dataset.id)} />
             : activeItem === 'Forecast'
               ? <ForecastPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
               : activeItem === 'Insights'
                 ? <InsightsPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
-              : <PlaceholderPage section={activeItem} />}
+                : activeItem === 'Scenario'
+                  ? <ScenarioPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
+                : <PlaceholderPage section={activeItem} />}
       </div>
     </AppShell>
   )

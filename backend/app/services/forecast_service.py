@@ -66,6 +66,15 @@ class ForecastService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found.")
         return self._serialize_run(dataset, run, self._monthly_costs(db, run.dataset_id))
 
+    def get_latest_forecast(self, db: Session, dataset_id: int) -> ForecastRunResponse:
+        run = self.forecasts.get_latest_for_dataset(db, dataset_id)
+        if run is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No persisted forecast found for this dataset.")
+        dataset = self.datasets.get_dataset(db, dataset_id)
+        if dataset is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset not found.")
+        return self._serialize_run(dataset, run, self._monthly_costs(db, dataset_id))
+
     def _monthly_costs(self, db: Session, dataset_id: int) -> list[HistoricalCostPoint]:
         totals: dict[date, float] = defaultdict(float)
         for record in self.datasets.list_all_records(db, dataset_id):

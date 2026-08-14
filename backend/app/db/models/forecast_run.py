@@ -26,3 +26,4 @@ class ForecastRun(Base):
     points: Mapped[list["ForecastPoint"]] = relationship(
         back_populates="forecast_run", cascade="all, delete-orphan"
     )
+    scenario_runs: Mapped[list["ScenarioRun"]] = relationship(back_populates="forecast_run")

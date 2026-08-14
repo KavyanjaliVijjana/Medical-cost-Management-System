@@ -30,3 +30,4 @@ class Dataset(Base):
     driver_insights: Mapped[list["DriverInsight"]] = relationship(back_populates="dataset", cascade="all, delete-orphan")
     alerts: Mapped[list["Alert"]] = relationship(back_populates="dataset", cascade="all, delete-orphan")
     recommendations: Mapped[list["Recommendation"]] = relationship(back_populates="dataset", cascade="all, delete-orphan")
+    scenario_runs: Mapped[list["ScenarioRun"]] = relationship(back_populates="dataset", cascade="all, delete-orphan")

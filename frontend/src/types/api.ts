@@ -172,3 +172,18 @@ export type Recommendation = {
   period: string
   created_at: string
 }
+
+export type ScenarioResult = {
+  id: number
+  dataset_id: number
+  forecast_run_id: number
+  department: string
+  department_cost_share_pct: number
+  reduction_pct: number
+  baseline_projected_cost: number
+  estimated_reduction_amount: number
+  scenario_projected_cost: number
+  impact_pct: number
+  created_at: string
+  disclaimer: string
+}

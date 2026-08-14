@@ -11,6 +11,7 @@ def test_forecast_api_returns_persisted_real_forecast_results() -> None:
         response = client.post("/api/v1/forecasts", json={"dataset_id": dataset_id, "horizon_months": 3})
         payload = response.json()
         retrieved = client.get(f"/api/v1/forecasts/{payload['id']}")
+        latest = client.get(f"/api/v1/forecasts/datasets/{dataset_id}/latest")
 
     assert response.status_code == 200
     assert payload["model_name"] == "Linear Regression (monthly cost trend)"
@@ -28,6 +29,8 @@ def test_forecast_api_returns_persisted_real_forecast_results() -> None:
     }
     assert retrieved.status_code == 200
     assert retrieved.json()["id"] == payload["id"]
+    assert latest.status_code == 200
+    assert latest.json()["id"] == payload["id"]
 
 
 def test_forecast_api_rejects_unsupported_horizon() -> None:

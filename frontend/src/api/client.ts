@@ -1,4 +1,4 @@
-import type { AnalyticsSummary, CostAlert, Dataset, DatasetPreviewResponse, DatasetValidationResponse, DemoUser, DriverInsight, ForecastRun, HealthStatus, Recommendation } from '../types/api'
+import type { AnalyticsSummary, CostAlert, Dataset, DatasetPreviewResponse, DatasetValidationResponse, DemoUser, DriverInsight, ForecastRun, HealthStatus, Recommendation, ScenarioResult } from '../types/api'
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1'
 
@@ -38,10 +38,17 @@ export const api = {
     body: JSON.stringify({ dataset_id: datasetId, horizon_months: horizonMonths }),
   }),
   getForecast: (forecastRunId: number) => request<ForecastRun>(`/forecasts/${forecastRunId}`),
+  getLatestForecast: (datasetId: number) => request<ForecastRun>(`/forecasts/datasets/${datasetId}/latest`),
   generateDrivers: (datasetId: number) => request<DriverInsight[]>(`/insights/datasets/${datasetId}/drivers/generate`, { method: 'POST' }),
   getDrivers: (datasetId: number) => request<DriverInsight[]>(`/insights/datasets/${datasetId}/drivers`),
   generateAlerts: (datasetId: number) => request<CostAlert[]>(`/insights/datasets/${datasetId}/alerts/generate`, { method: 'POST' }),
   getAlerts: (datasetId: number) => request<CostAlert[]>(`/insights/datasets/${datasetId}/alerts`),
   generateRecommendations: (datasetId: number) => request<Recommendation[]>(`/recommendations/datasets/${datasetId}/generate`, { method: 'POST' }),
   getRecommendations: (datasetId: number) => request<Recommendation[]>(`/recommendations/datasets/${datasetId}`),
+  createScenario: (datasetId: number, department: string, reductionPct: number) => request<ScenarioResult>('/scenarios', {
+    method: 'POST',
+    body: JSON.stringify({ dataset_id: datasetId, department, reduction_pct: reductionPct }),
+  }),
+  getScenario: (scenarioId: number) => request<ScenarioResult>(`/scenarios/${scenarioId}`),
+  getLatestScenario: (datasetId: number) => request<ScenarioResult>(`/scenarios/datasets/${datasetId}/latest`),
 }
