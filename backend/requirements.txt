@@ -9,3 +9,4 @@ numpy==2.2.5
 scikit-learn==1.6.1
 joblib==1.4.2
 psycopg[binary]==3.2.9
+psycopg2-binary==2.9.10
