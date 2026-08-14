@@ -2,63 +2,33 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { api } from './api/client'
 import { AppShell, type NavigationItem } from './components/layout/AppShell'
+import { AuthPage } from './pages/AuthPage'
+import { AdvisorPage } from './pages/AdvisorPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { DataUploadPage } from './pages/DataUploadPage'
+import { ExecutiveReportPage } from './pages/ExecutiveReportPage'
 import { ForecastPage } from './pages/ForecastPage'
 import { InsightsPage } from './pages/InsightsPage'
-import { ExecutiveReportPage } from './pages/ExecutiveReportPage'
-import { AdvisorPage } from './pages/AdvisorPage'
+import { PlaceholderPage } from './pages/PlaceholderPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { ScenarioPage } from './pages/ScenarioPage'
-import { PlaceholderPage } from './pages/PlaceholderPage'
-import type { DemoUser, HealthStatus } from './types/api'
+import type { ApplicationUser, AuthenticationResponse, HealthStatus } from './types/api'
 
-const sessionUserKey = 'medical-cost-demo-user'
+const sessionUserKey = 'medical-cost-current-user'
 const storedDatasetKey = 'medical-cost-selected-dataset'
 
-function LoginScreen({ onLogin }: { onLogin: (user: DemoUser) => void }) {
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-
-  async function handleLogin() {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const user = await api.demoLogin()
-      window.sessionStorage.setItem(sessionUserKey, JSON.stringify(user))
-      onLogin(user)
-    } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : 'Unable to reach the demo workspace.')
-    } finally {
-      setIsLoading(false)
-    }
+function savedSessionUser(): ApplicationUser | null {
+  const saved = window.sessionStorage.getItem(sessionUserKey)
+  if (!api.hasAccessToken()) return null
+  try {
+    return saved ? JSON.parse(saved) as ApplicationUser : null
+  } catch {
+    return null
   }
-
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-mist p-6">
-      <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal">Medical economics</p>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Cost Management</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-600">Access the seeded hackathon demo workspace.</p>
-        <button
-          className="mt-7 w-full rounded-lg bg-navy px-4 py-3 text-sm font-semibold text-white transition hover:bg-navy-dark disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isLoading}
-          onClick={handleLogin}
-          type="button"
-        >
-          {isLoading ? 'Opening workspace…' : 'Continue as demo user'}
-        </button>
-        {error && <p className="mt-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
-      </section>
-    </main>
-  )
 }
 
 export default function App() {
-  const [user, setUser] = useState<DemoUser | null>(() => {
-    const saved = window.sessionStorage.getItem(sessionUserKey)
-    return saved ? JSON.parse(saved) as DemoUser : null
-  })
+  const [user, setUser] = useState<ApplicationUser | null>(savedSessionUser)
   const [activeItem, setActiveItem] = useState<NavigationItem>('Dashboard')
   const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(() => {
     const saved = window.localStorage.getItem(storedDatasetKey)
@@ -79,41 +49,49 @@ export default function App() {
   }, [])
 
   const logout = useCallback(() => {
+    void api.logout().catch(() => undefined)
+    api.clearAccessToken()
     window.sessionStorage.removeItem(sessionUserKey)
     setUser(null)
     setActiveItem('Dashboard')
   }, [])
 
-  if (!user) return <LoginScreen onLogin={setUser} />
+  const saveUser = useCallback((authenticatedUser: AuthenticationResponse) => {
+    const { access_token, ...applicationUser } = authenticatedUser
+    api.setAccessToken(access_token)
+    window.sessionStorage.setItem(sessionUserKey, JSON.stringify(applicationUser))
+    setUser(applicationUser)
+  }, [])
+
+  const saveProfileUser = useCallback((updatedUser: ApplicationUser) => {
+    window.sessionStorage.setItem(sessionUserKey, JSON.stringify(updatedUser))
+    setUser(updatedUser)
+  }, [])
+
+  if (!user) return <AuthPage onAuthenticated={saveUser} />
 
   return (
-    <AppShell
-      activeItem={activeItem}
-      health={health}
-      healthError={healthError}
-      onNavigate={setActiveItem}
-      userName={user.display_name}
-    >
+    <AppShell activeItem={activeItem} health={health} healthError={healthError} onLogout={logout} onNavigate={setActiveItem} userName={user.display_name}>
       <div className="mx-auto max-w-7xl px-8 py-10">
         {activeItem === 'Dashboard'
           ? <DashboardPage mode="dashboard" onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
           : activeItem === 'Analytics'
             ? <DashboardPage mode="analytics" onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
-          : activeItem === 'Executive report'
-            ? <ExecutiveReportPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
-          : activeItem === 'Data upload'
-            ? <DataUploadPage onDatasetProcessed={(dataset) => selectDataset(dataset.id)} />
-            : activeItem === 'Forecast'
-              ? <ForecastPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
-              : activeItem === 'Insights'
-                ? <InsightsPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
-                : activeItem === 'Scenario'
-                  ? <ScenarioPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
-                  : activeItem === 'Advisor'
-                    ? <AdvisorPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
-                    : activeItem === 'Profile'
-                      ? <ProfilePage onLogout={logout} user={user} />
-                : <PlaceholderPage section={activeItem} />}
+            : activeItem === 'Executive report'
+              ? <ExecutiveReportPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
+              : activeItem === 'Data upload'
+                ? <DataUploadPage onDatasetProcessed={(dataset) => selectDataset(dataset.id)} />
+                : activeItem === 'Forecast'
+                  ? <ForecastPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
+                  : activeItem === 'Insights'
+                    ? <InsightsPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
+                    : activeItem === 'Scenario'
+                      ? <ScenarioPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
+                      : activeItem === 'Advisor'
+                        ? <AdvisorPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
+                        : activeItem === 'Profile'
+                          ? <ProfilePage onLogout={logout} onUserUpdated={saveProfileUser} user={user} />
+                          : <PlaceholderPage section={activeItem} />}
       </div>
     </AppShell>
   )

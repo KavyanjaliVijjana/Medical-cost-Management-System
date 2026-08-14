@@ -1,11 +1,13 @@
-import type { AdvisorResponse, AnalyticsSummary, CostAlert, Dataset, DatasetPreviewResponse, DatasetValidationResponse, DemoUser, DriverInsight, ForecastRun, HealthStatus, Recommendation, ScenarioResult } from '../types/api'
+import type { AdvisorResponse, AnalyticsSummary, ApplicationUser, AuthenticationResponse, CostAlert, Dataset, DatasetPreviewResponse, DatasetValidationResponse, DriverInsight, ForecastRun, HealthStatus, Recommendation, ScenarioResult } from '../types/api'
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1'
+const accessTokenKey = 'medical-cost-access-token'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const isFormData = init?.body instanceof FormData
+  const token = window.sessionStorage.getItem(accessTokenKey)
   const response = await fetch(`${baseUrl}${path}`, {
-    headers: { ...(isFormData ? {} : { 'Content-Type': 'application/json' }), ...init?.headers },
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(isFormData ? {} : { 'Content-Type': 'application/json' }), ...init?.headers },
     ...init,
   })
 
@@ -14,15 +16,23 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(payload?.detail ?? `Request failed (${response.status})`)
   }
 
+  if (response.status === 204) return undefined as T
+
   return response.json() as Promise<T>
 }
 
 export const api = {
+  setAccessToken: (token: string) => window.sessionStorage.setItem(accessTokenKey, token),
+  clearAccessToken: () => window.sessionStorage.removeItem(accessTokenKey),
+  hasAccessToken: () => Boolean(window.sessionStorage.getItem(accessTokenKey)),
   getHealth: () => request<HealthStatus>('/health'),
-  demoLogin: () => request<DemoUser>('/auth/demo-login', {
+  login: (credentials: { email: string; password: string }) => request<AuthenticationResponse>('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email: 'demo@medicalcost.local' }),
+    body: JSON.stringify(credentials),
   }),
+  register: (payload: { full_name: string; email: string; password: string; confirm_password: string }) => request<AuthenticationResponse>('/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
+  logout: () => request<void>('/auth/logout', { method: 'POST' }),
+  updateProfile: (fullName: string) => request<ApplicationUser>('/auth/profile', { method: 'PATCH', body: JSON.stringify({ full_name: fullName }) }),
   validateDataset: (file: File) => {
     const formData = new FormData()
     formData.append('file', file)

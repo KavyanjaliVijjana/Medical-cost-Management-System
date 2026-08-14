@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.dataset import DatasetResponse
 
@@ -8,6 +8,13 @@ from app.schemas.dataset import DatasetResponse
 class ForecastRequest(BaseModel):
     dataset_id: int
     horizon_months: int = Field(default=3, ge=1, le=12)
+
+    @field_validator("horizon_months")
+    @classmethod
+    def supported_horizon(cls, value: int) -> int:
+        if value not in {1, 3, 6, 12}:
+            raise ValueError("Forecast horizon must be 1, 3, 6, or 12 months.")
+        return value
 
 
 class HistoricalCostPoint(BaseModel):

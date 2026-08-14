@@ -9,9 +9,10 @@ class DatasetRepository:
     """Persistence operations for Phase 2 dataset ingestion."""
 
     def create_dataset(
-        self, db: Session, *, name: str, source_type: str, is_synthetic: bool, row_count: int
+        self, db: Session, *, user_id: int, name: str, source_type: str, is_synthetic: bool, row_count: int
     ) -> Dataset:
         dataset = Dataset(
+            user_id=user_id,
             name=name,
             source_type=source_type,
             is_synthetic=is_synthetic,
@@ -49,10 +50,10 @@ class DatasetRepository:
         )
         return list(db.scalars(statement))
 
-    def list_completed_datasets(self, db: Session) -> list[Dataset]:
+    def list_completed_datasets(self, db: Session, user_id: int) -> list[Dataset]:
         statement = (
             select(Dataset)
-            .where(Dataset.processing_status == "completed")
+            .where(Dataset.processing_status == "completed", Dataset.user_id == user_id)
             .order_by(Dataset.uploaded_at.desc(), Dataset.id.desc())
         )
         return list(db.scalars(statement))

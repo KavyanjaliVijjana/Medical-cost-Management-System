@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -14,12 +14,15 @@ class Dataset(Base):
     __tablename__ = "datasets"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True, nullable=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     source_type: Mapped[str] = mapped_column(String(32), nullable=False)
     is_synthetic: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     row_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     processing_status: Mapped[str] = mapped_column(String(32), default="ready", nullable=False)
+
+    owner: Mapped["User | None"] = relationship(back_populates="datasets")
 
     cost_records: Mapped[list["CostRecord"]] = relationship(
         back_populates="dataset", cascade="all, delete-orphan"

@@ -22,6 +22,8 @@ class AdvisorResponse(BaseModel):
     status: Literal["completed", "provider_unavailable", "provider_error", "unsupported_question"]
     answer: str | None
     message: str | None
+    supervisor: str
+    specialists_invoked: list[str]
     tools_used: list[str]
     evidence: list[AdvisorToolEvidenceResponse]
     provider: str

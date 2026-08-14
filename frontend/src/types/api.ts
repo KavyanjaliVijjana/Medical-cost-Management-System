@@ -5,11 +5,18 @@ export type HealthStatus = {
   database: 'connected'
 }
 
-export type DemoUser = {
+export type ApplicationUser = {
   id: number
   email: string
   display_name: string
   is_demo: boolean
+  role: string
+  account_type: string
+  created_at: string
+}
+
+export type AuthenticationResponse = ApplicationUser & {
+  access_token: string
 }
 
 export type ValidationErrorItem = {
@@ -200,6 +207,8 @@ export type AdvisorResponse = {
   status: 'completed' | 'provider_unavailable' | 'provider_error' | 'unsupported_question'
   answer: string | null
   message: string | null
+  supervisor: string
+  specialists_invoked: string[]
   tools_used: string[]
   evidence: AdvisorToolEvidence[]
   provider: string
