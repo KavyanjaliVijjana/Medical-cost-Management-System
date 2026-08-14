@@ -19,6 +19,34 @@ Explicitly label observed facts as ACTUAL, model outputs as FORECAST, and scenar
 Never describe a scenario estimate as guaranteed savings. If a tool reports unavailable data, state that clearly."""
 
 CLINICAL_TERMS = ("diagnos", "diagnosis", "prescrib", "treatment", "medication", "patient care", "clinical")
+BUSINESS_TERMS = (
+    "cost",
+    "expense",
+    "spend",
+    "medical",
+    "utilization",
+    "patient",
+    "forecast",
+    "trend",
+    "pressure",
+    "driver",
+    "department",
+    "recommend",
+    "priorit",
+    "leadership",
+    "scenario",
+    "projected",
+    "summary",
+    "oncology",
+    "pharmacy",
+    "site of care",
+    "service mix",
+    "unit cost",
+)
+UNSUPPORTED_QUESTION_MESSAGE = (
+    "I can help analyze medical cost trends, forecast cost pressure, identify cost drivers, "
+    "evaluate cost-containment recommendations, and run what-if scenarios for the selected dataset."
+)
 
 
 class MedicalEconomicsAdvisorAgent:
@@ -29,13 +57,29 @@ class MedicalEconomicsAdvisorAgent:
         self.llm_provider = llm_provider or create_llm_provider(get_settings())
 
     def answer(self, db: Session, *, dataset_id: int, question: str) -> AdvisorResponse:
-        if any(term in question.lower() for term in CLINICAL_TERMS):
+        normalized_question = question.lower()
+        if any(term in normalized_question for term in CLINICAL_TERMS):
             return AdvisorResponse(
                 dataset_id=dataset_id,
                 question=question,
                 status="unsupported_question",
                 answer=None,
-                message="The advisor supports healthcare-finance and operational cost questions only; it does not provide clinical guidance.",
+                message=(
+                    "The advisor does not provide clinical guidance. "
+                    f"{UNSUPPORTED_QUESTION_MESSAGE}"
+                ),
+                tools_used=[],
+                evidence=[],
+                provider=self.llm_provider.name,
+                model=self.llm_provider.model,
+            )
+        if not any(term in normalized_question for term in BUSINESS_TERMS):
+            return AdvisorResponse(
+                dataset_id=dataset_id,
+                question=question,
+                status="unsupported_question",
+                answer=None,
+                message=UNSUPPORTED_QUESTION_MESSAGE,
                 tools_used=[],
                 evidence=[],
                 provider=self.llm_provider.name,
@@ -72,17 +116,34 @@ class MedicalEconomicsAdvisorAgent:
     @staticmethod
     def select_tools(question: str) -> list[str]:
         normalized = question.lower()
-        if any(phrase in normalized for phrase in ("what happens if", "what if", "reduced by", "reduction")):
+        if any(
+            phrase in normalized
+            for phrase in (
+                "what happens if",
+                "what if",
+                "reduced by",
+                "reduction",
+                "falls by",
+                "fall by",
+                "decreased by",
+                "decrease by",
+                "drops by",
+                "drop by",
+            )
+        ):
             return ["scenario"]
-        if "biggest cost pressures" in normalized:
+        if any(phrase in normalized for phrase in ("biggest cost pressures", "most pressure", "most cost pressure")):
             return ["cost_pressures"]
         if any(phrase in normalized for phrase in ("executive summary", "summarize this dataset", "summary of this dataset")):
             return ["analytics", "forecast", "cost_pressures", "recommendations"]
-        if any(phrase in normalized for phrase in ("prioritize", "priority", "what should")):
+        if any(phrase in normalized for phrase in ("prioritize", "priority", "what should", "leadership focus", "should leadership")):
             return ["cost_pressures", "recommendations"]
-        if any(phrase in normalized for phrase in ("cost pressure", "pressure", "why are", "why is")):
+        if any(phrase in normalized for phrase in ("cost pressure", "pressure", "why are", "why is", "why did")):
             return ["analytics", "cost_pressures"]
-        if any(phrase in normalized for phrase in ("expected cost trend", "forecast", "expected trend", "cost trend")):
+        if any(
+            phrase in normalized
+            for phrase in ("expected cost trend", "forecast", "expected trend", "cost trend", "expected to rise", "expected to fall", "next few months")
+        ):
             return ["forecast"]
         return ["analytics"]
 

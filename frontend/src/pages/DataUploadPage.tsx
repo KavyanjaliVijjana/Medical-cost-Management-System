@@ -97,10 +97,17 @@ export function DataUploadPage({ onDatasetProcessed }: { onDatasetProcessed: (da
         </p>
       </header>
 
+      <article className="rounded-xl border border-cyan-200 bg-cyan-50 p-5">
+        <h3 className="text-base font-semibold text-slate-900">CSV structure guidance</h3>
+        <p className="mt-2 text-sm leading-6 text-slate-700">Required columns are needed for accurate core analysis. Optional fields enable additional driver and cost analysis.</p>
+        <div className="mt-4 grid gap-4 lg:grid-cols-2"><div><p className="text-xs font-semibold uppercase tracking-wide text-teal">Required columns</p><p className="mt-2 text-sm text-slate-700"><code>record_date</code> (use <code>date</code> as the current upload header), <code>department</code>, <code>patient_count</code>, <code>total_cost</code></p></div><div><p className="text-xs font-semibold uppercase tracking-wide text-teal">Optional columns</p><p className="mt-2 text-sm leading-6 text-slate-700"><code>service_type</code>, <code>medicine_cost</code>, <code>lab_cost</code>, <code>treatment_cost</code>, <code>insurance_amount</code>, <code>provider_type</code>, <code>site_of_care</code>, <code>drug_category</code>, <code>unit_cost</code></p></div></div>
+        <p className="mt-4 rounded-lg bg-white/80 p-3 text-sm font-medium text-slate-700">Upload aggregated medical-cost data only. Do not upload patient-identifiable information.</p>
+      </article>
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-900">Upload CSV</h3>
-          <p className="mt-1 text-sm text-slate-600">Required: date, department, patient_count, total_cost.</p>
+          <p className="mt-1 text-sm text-slate-600">Required upload headers: date, department, patient_count, total_cost.</p>
           <input
             accept=".csv,text/csv"
             className="mt-5 block w-full cursor-pointer rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-slate-700 file:mr-4 file:rounded-md file:border-0 file:bg-cyan-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-teal hover:file:bg-cyan-100"

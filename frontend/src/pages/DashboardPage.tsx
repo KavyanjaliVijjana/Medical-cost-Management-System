@@ -7,6 +7,7 @@ import type { AnalyticsSummary, CostAlert, Dataset, DriverInsight, ForecastRun, 
 type DashboardPageProps = {
   selectedDatasetId: number | null
   onDatasetChange: (datasetId: number) => void
+  mode?: 'dashboard' | 'analytics'
 }
 
 const chartColors = ['#0f766e', '#0f3d5c', '#38bdf8', '#7c3aed', '#f59e0b', '#e11d48']
@@ -51,7 +52,7 @@ function StoryStep({ label, value, detail, tone = 'slate' }: { label: string; va
   return <div className={`rounded-lg border p-4 ${styles}`}><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-2 text-sm font-semibold text-slate-900">{value}</p><p className="mt-1 text-xs leading-5 text-slate-600">{detail}</p></div>
 }
 
-export function DashboardPage({ selectedDatasetId, onDatasetChange }: DashboardPageProps) {
+export function DashboardPage({ selectedDatasetId, onDatasetChange, mode = 'dashboard' }: DashboardPageProps) {
   const [datasets, setDatasets] = useState<Dataset[]>([])
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
   const [story, setStory] = useState<BusinessStory | null>(null)
@@ -115,9 +116,9 @@ export function DashboardPage({ selectedDatasetId, onDatasetChange }: DashboardP
     <section className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-teal">Historical analytics</p>
-          <h2 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">Medical cost dashboard</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Actual historical medical-cost metrics from processed datasets.</p>
+          <p className="text-sm font-medium text-teal">{mode === 'dashboard' ? 'Executive overview' : 'Historical investigation'}</p>
+          <h2 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">{mode === 'dashboard' ? 'Medical cost dashboard' : 'Cost analytics workspace'}</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{mode === 'dashboard' ? 'A concise, evidence-led view of financial performance and cost-containment priorities.' : 'Detailed historical trends, utilization, cost per patient, and department contribution from stored records.'}</p>
         </div>
         <label className="block text-sm font-medium text-slate-700">
           Dataset
@@ -150,6 +151,11 @@ export function DashboardPage({ selectedDatasetId, onDatasetChange }: DashboardP
             <MetricCard label="Latest monthly cost" value={currency(summary.metrics.latest_month_cost)} supportingText={summary.metrics.latest_month ? `${monthLabel(summary.metrics.latest_month)} · ${percentage(summary.metrics.month_over_month_cost_change_pct)} vs prior month` : 'No monthly records'} />
           </div>
 
+          {mode === 'dashboard' && <>
+          <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-base font-semibold text-slate-900">Executive summary</h3><p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">ACTUAL: latest monthly cost is {currency(summary.metrics.latest_month_cost)}. FORECAST: {story?.forecast ? `${story.forecast.horizon_months}-month outlook is ${percentage(story.forecast.expected_change_pct)}.` : 'generate a forecast to assess the outlook.'}</p></div><span className="rounded-full bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-teal">Selected dataset</span></div>
+            <div className="mt-4 rounded-lg bg-slate-50 p-4 text-sm leading-6 text-slate-700">{story?.alert ? `Priority cost pressure: ${story.alert.explanation}` : story?.driver ? `Top cost driver: ${story.driver.explanation}` : 'Generate insights to view cost-containment priorities.'}</div>
+          </article>
           <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-base font-semibold text-slate-900">Cost-containment story</h3><p className="mt-1 text-sm text-slate-600">Historical evidence flows through the latest persisted forecast, insights, recommendation, and optional scenario.</p></div><span className="rounded-full bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-teal">Selected dataset evidence</span></div>
             <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
@@ -161,7 +167,9 @@ export function DashboardPage({ selectedDatasetId, onDatasetChange }: DashboardP
               <StoryStep label="Scenario" value={story?.scenario ? currency(story.scenario.scenario_projected_cost) : 'Not calculated'} detail={story?.scenario ? `${story.scenario.department}: hypothetical estimate only` : 'Run a department reduction scenario'} tone="teal" />
             </div>
           </article>
+          </>}
 
+          {mode === 'analytics' && <>
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(20rem,1fr)]">
             <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
@@ -202,6 +210,8 @@ export function DashboardPage({ selectedDatasetId, onDatasetChange }: DashboardP
               <div className="overflow-x-auto"><table className="min-w-full text-left text-sm"><thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500"><tr><th className="pb-3 pr-4 font-semibold">Department</th><th className="pb-3 pr-4 font-semibold">Cost</th><th className="pb-3 pr-4 font-semibold">Patients</th><th className="pb-3 font-semibold">Cost/patient</th></tr></thead><tbody className="divide-y divide-slate-100">{summary.departments.map((department) => <tr key={department.department}><td className="py-3 pr-4 font-medium text-slate-800">{department.department}</td><td className="py-3 pr-4 text-slate-600">{currency(department.total_cost)}</td><td className="py-3 pr-4 text-slate-600">{number(department.patient_count)}</td><td className="py-3 text-slate-600">{currency(department.cost_per_patient)}</td></tr>)}</tbody></table></div>
             </div>
           </article>
+          <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><div><h3 className="text-base font-semibold text-slate-900">Monthly investigation table</h3><p className="mt-1 text-sm text-slate-600">Chronological cost, patient volume, cost per patient, and period-over-period cost change.</p></div><div className="mt-5 overflow-x-auto"><table className="min-w-full text-left text-sm"><thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500"><tr><th className="pb-3 pr-6">Month</th><th className="pb-3 pr-6">Total cost</th><th className="pb-3 pr-6">Patients</th><th className="pb-3 pr-6">Cost per patient</th><th className="pb-3">Cost change</th></tr></thead><tbody className="divide-y divide-slate-100">{summary.monthly_trend.map((point) => <tr key={point.month}><td className="py-3 pr-6 font-medium text-slate-800">{monthLabel(point.month)}</td><td className="py-3 pr-6 text-slate-700">{currency(point.total_cost)}</td><td className="py-3 pr-6 text-slate-700">{number(point.patient_count)}</td><td className="py-3 pr-6 text-slate-700">{currency(point.cost_per_patient)}</td><td className="py-3 text-slate-700">{percentage(point.month_over_month_cost_change_pct)}</td></tr>)}</tbody></table></div></article>
+          </>}
         </>
       )}
       {selectedDataset && summary && <p className="text-xs text-slate-500">Dataset: {selectedDataset.name} · {selectedDataset.row_count} stored records · {selectedDataset.is_synthetic ? 'Synthetic Demo Dataset' : 'Uploaded dataset'}</p>}

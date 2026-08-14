@@ -19,10 +19,14 @@ def _prepared_dataset(client: TestClient, *, with_forecast: bool = True) -> int:
 def test_advisor_uses_real_evidence_for_required_questions_without_provider() -> None:
     expected_tools = {
         "Why are medical costs increasing?": ["analytics", "cost_pressures"],
+        "Why did our medical expenses increase?": ["analytics", "cost_pressures"],
         "What is the expected cost trend?": ["forecast"],
+        "Are costs expected to rise over the next few months?": ["forecast"],
         "What are the biggest cost pressures?": ["cost_pressures"],
-        "What should the medical economics team prioritize?": ["cost_pressures", "recommendations"],
-        "What happens if Oncology costs are reduced by 5%?": ["scenario"],
+        "Which areas are putting the most pressure on costs?": ["cost_pressures"],
+        "What should leadership focus on?": ["cost_pressures", "recommendations"],
+        "What happens if Oncology costs are reduced by 10%?": ["scenario"],
+        "Give me an executive summary of this dataset.": ["analytics", "forecast", "cost_pressures", "recommendations"],
     }
     with TestClient(app) as client:
         dataset_id = _prepared_dataset(client)
@@ -40,7 +44,7 @@ def test_advisor_uses_real_evidence_for_required_questions_without_provider() ->
     analytics = responses["Why are medical costs increasing?"]["evidence"][0]["result"]
     assert analytics["metrics"]["total_medical_cost"] > 0
     assert len(responses["What is the expected cost trend?"]["evidence"][0]["result"]["forecast_points"]) == 3
-    scenario = responses["What happens if Oncology costs are reduced by 5%?"]["evidence"][0]["result"]
+    scenario = responses["What happens if Oncology costs are reduced by 10%?"]["evidence"][0]["result"]
     assert scenario["scenario_projected_cost"] < scenario["baseline_projected_cost"]
 
 
@@ -54,6 +58,37 @@ def test_advisor_returns_missing_forecast_evidence_without_breaking() -> None:
     assert payload["status"] == "provider_unavailable"
     assert payload["evidence"][0]["tool"] == "forecast"
     assert "No persisted forecast" in payload["evidence"][0]["error"]
+
+
+def test_advisor_keeps_available_executive_evidence_when_forecast_is_missing() -> None:
+    with TestClient(app) as client:
+        dataset_id = _prepared_dataset(client, with_forecast=False)
+        response = client.post(
+            "/api/v1/advisor/ask",
+            json={"dataset_id": dataset_id, "question": "Give me an executive summary of this dataset."},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "provider_unavailable"
+    evidence = {item["tool"]: item for item in payload["evidence"]}
+    assert evidence["analytics"]["result"]["metrics"]["total_medical_cost"] > 0
+    assert "No persisted forecast" in evidence["forecast"]["error"]
+    assert evidence["cost_pressures"]["error"] is None
+    assert evidence["recommendations"]["error"] is None
+
+
+def test_advisor_rejects_unrelated_questions_without_calling_tools() -> None:
+    with TestClient(app) as client:
+        dataset_id = _prepared_dataset(client)
+        response = client.post("/api/v1/advisor/ask", json={"dataset_id": dataset_id, "question": "What is the weather today?"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "unsupported_question"
+    assert payload["tools_used"] == []
+    assert payload["evidence"] == []
+    assert "medical cost trends" in payload["message"]
 
 
 def test_advisor_rejects_invalid_scenario_reduction() -> None:

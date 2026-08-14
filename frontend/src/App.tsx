@@ -8,11 +8,12 @@ import { ForecastPage } from './pages/ForecastPage'
 import { InsightsPage } from './pages/InsightsPage'
 import { ExecutiveReportPage } from './pages/ExecutiveReportPage'
 import { AdvisorPage } from './pages/AdvisorPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { ScenarioPage } from './pages/ScenarioPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import type { DemoUser, HealthStatus } from './types/api'
 
-const storedUserKey = 'medical-cost-demo-user'
+const sessionUserKey = 'medical-cost-demo-user'
 const storedDatasetKey = 'medical-cost-selected-dataset'
 
 function LoginScreen({ onLogin }: { onLogin: (user: DemoUser) => void }) {
@@ -24,7 +25,7 @@ function LoginScreen({ onLogin }: { onLogin: (user: DemoUser) => void }) {
     setError(null)
     try {
       const user = await api.demoLogin()
-      window.localStorage.setItem(storedUserKey, JSON.stringify(user))
+      window.sessionStorage.setItem(sessionUserKey, JSON.stringify(user))
       onLogin(user)
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : 'Unable to reach the demo workspace.')
@@ -55,7 +56,7 @@ function LoginScreen({ onLogin }: { onLogin: (user: DemoUser) => void }) {
 
 export default function App() {
   const [user, setUser] = useState<DemoUser | null>(() => {
-    const saved = window.localStorage.getItem(storedUserKey)
+    const saved = window.sessionStorage.getItem(sessionUserKey)
     return saved ? JSON.parse(saved) as DemoUser : null
   })
   const [activeItem, setActiveItem] = useState<NavigationItem>('Dashboard')
@@ -77,6 +78,12 @@ export default function App() {
     setSelectedDatasetId(datasetId)
   }, [])
 
+  const logout = useCallback(() => {
+    window.sessionStorage.removeItem(sessionUserKey)
+    setUser(null)
+    setActiveItem('Dashboard')
+  }, [])
+
   if (!user) return <LoginScreen onLogin={setUser} />
 
   return (
@@ -88,8 +95,10 @@ export default function App() {
       userName={user.display_name}
     >
       <div className="mx-auto max-w-7xl px-8 py-10">
-        {activeItem === 'Dashboard' || activeItem === 'Analytics'
-          ? <DashboardPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
+        {activeItem === 'Dashboard'
+          ? <DashboardPage mode="dashboard" onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
+          : activeItem === 'Analytics'
+            ? <DashboardPage mode="analytics" onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
           : activeItem === 'Executive report'
             ? <ExecutiveReportPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
           : activeItem === 'Data upload'
@@ -102,6 +111,8 @@ export default function App() {
                   ? <ScenarioPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
                   : activeItem === 'Advisor'
                     ? <AdvisorPage onDatasetChange={selectDataset} selectedDatasetId={selectedDatasetId} />
+                    : activeItem === 'Profile'
+                      ? <ProfilePage onLogout={logout} user={user} />
                 : <PlaceholderPage section={activeItem} />}
       </div>
     </AppShell>
