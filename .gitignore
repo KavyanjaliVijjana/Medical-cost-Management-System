@@ -19,3 +19,5 @@ Thumbs.db
 
 # Local SQLite databases
 *.db
+
+scalability_test/*.csv
