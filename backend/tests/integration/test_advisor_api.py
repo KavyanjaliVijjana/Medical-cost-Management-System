@@ -24,6 +24,7 @@ def test_advisor_uses_real_evidence_for_required_questions_without_provider() ->
         "Why are medical costs increasing?": (["analytics", "cost_pressures"], [TREND_FORECAST_SPECIALIST, COST_PRESSURE_ACTION_SPECIALIST]),
         "Why did our medical expenses increase?": (["analytics", "cost_pressures"], [TREND_FORECAST_SPECIALIST, COST_PRESSURE_ACTION_SPECIALIST]),
         "What is the expected cost trend?": (["forecast"], [TREND_FORECAST_SPECIALIST]),
+        "What are the expected costs?": (["forecast"], [TREND_FORECAST_SPECIALIST]),
         "Are costs expected to rise over the next few months?": (["forecast"], [TREND_FORECAST_SPECIALIST]),
         "What are the biggest cost pressures?": (["cost_pressures"], [COST_PRESSURE_ACTION_SPECIALIST]),
         "Which areas are putting the most pressure on costs?": (["cost_pressures"], [COST_PRESSURE_ACTION_SPECIALIST]),
@@ -52,10 +53,33 @@ def test_advisor_uses_real_evidence_for_required_questions_without_provider() ->
     scenario = responses["What happens if Oncology costs are reduced by 10%?"]["evidence"][0]["result"]
     assert scenario["scenario_projected_cost"] < scenario["baseline_projected_cost"]
     assert "SUMMARY" in responses["Why are medical costs increasing?"]["answer"]
-    assert "KEY EVIDENCE" in responses["What are the biggest cost pressures?"]["answer"]
+    assert "WHAT THE DATA SHOWS" in responses["What are the biggest cost pressures?"]["answer"]
     assert "FORECAST" in responses["Are costs expected to rise over the next few months?"]["answer"]
     assert "RECOMMENDED FOCUS" in responses["What should leadership focus on?"]["answer"]
     assert "HYPOTHETICAL SCENARIO" in responses["What happens if Oncology costs are reduced by 10%?"]["answer"]
+
+    cost_increase_answer = responses["Why are medical costs increasing?"]["answer"]
+    assert "WHAT THE DATA SHOWS" in cost_increase_answer
+    assert "does not establish a specific causal factor" in cost_increase_answer
+    assert "ACTUAL: The analyzed dataset contains" in cost_increase_answer
+
+    forecast_response = responses["What is the expected cost trend?"]
+    forecast_answer = forecast_response["answer"]
+    first_forecast_cost = forecast_response["evidence"][0]["result"]["forecast_points"][0]["predicted_cost"]
+    assert "FORECAST values are planning estimates rather than observed spending" in forecast_answer
+    assert f"${first_forecast_cost:,.0f}" in forecast_answer
+
+    pressure_answer = responses["What are the biggest cost pressures?"]["answer"]
+    assert "WHY IT MATTERS" in pressure_answer
+    assert "operational review is warranted" in pressure_answer
+
+    leadership_response = responses["What should leadership focus on?"]
+    first_recommendation = leadership_response["evidence"][1]["result"]["recommendations"][0]
+    assert first_recommendation["title"] in leadership_response["answer"]
+
+    scenario_answer = responses["What happens if Oncology costs are reduced by 10%?"]["answer"]
+    assert "not an observed result or guaranteed savings" in scenario_answer
+    assert "WHAT THE SCENARIO SHOWS" in scenario_answer
 
 
 def test_advisor_returns_missing_forecast_evidence_without_breaking() -> None:
@@ -70,7 +94,8 @@ def test_advisor_returns_missing_forecast_evidence_without_breaking() -> None:
     assert payload["specialists_invoked"] == [TREND_FORECAST_SPECIALIST]
     assert payload["evidence"][0]["tool"] == "forecast"
     assert "No persisted forecast" in payload["evidence"][0]["error"]
-    assert "No complete evidence" in payload["answer"]
+    assert "requested evidence is not currently available" in payload["answer"]
+    assert "DATA AVAILABILITY" in payload["answer"]
 
 
 def test_advisor_keeps_available_executive_evidence_when_forecast_is_missing() -> None:
@@ -143,6 +168,8 @@ def test_advisor_provider_failure_preserves_deterministic_evidence(monkeypatch) 
     payload = response.json()
     assert payload["status"] == "provider_error"
     assert payload["answer"]
+    assert "SUMMARY" in payload["answer"]
+    assert "WHAT THE DATA SHOWS" in payload["answer"]
     assert payload["evidence"][0]["result"]["metrics"]["total_medical_cost"] > 0
     assert provider.calls == 1
 
